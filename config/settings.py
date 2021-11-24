@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     'django.contrib.humanize',
 
     'debug_toolbar',
+    'crispy_forms',
 
     'IT_hunter',
     'IT_hunter.templatetags.user_tags',
@@ -122,15 +123,12 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
 
 STATIC_URL = '/static/'
-
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
-
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'IT_hunter/static'),
 ]
 
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-
 MEDIA_URL = '/media/'
 
 INTERNAL_IPS = ['127.0.0.1']
@@ -139,3 +137,6 @@ INTERNAL_IPS = ['127.0.0.1']
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+LOGOUT_REDIRECT_URL = '/'
+LOGIN_URL = '/login'

@@ -2,6 +2,7 @@
 {% block title %}{{ block.super }}:{% endblock %}
 {% block content %}
 {% load user_tags %}
+{% load crispy_forms_tags %}
 <main class="container mt-3 pb-5">
     <div class="row mt-5">
         <div class="col-12 col-lg-2">
@@ -14,7 +15,8 @@
                 <a href="#"><img src="{{ vacancy.company.logo.url }}" width="130" height="80" alt=""></a>
                 <div class="d-flex align-items-baseline align-content-baseline">
                     <h1 class="h2 mt-4 font-weight-bold">{{ vacancy.title }}</h1>
-                    <p class="m-0 pl-3">{{ vacancy.salary_min|convert_digit }} – {{ vacancy.salary_max|convert_digit }} Р</p>
+                    <p class="m-0 pl-3">{{ vacancy.salary_min|convert_digit }} – {{ vacancy.salary_max|convert_digit }}
+                        Р</p>
                 </div>
                 <p class="mt-2">{{ vacancy.specialty.title }} • {{ vacancy.skills|replace }}</p>
                 <p class="text-muted mb-4">
@@ -26,24 +28,10 @@
                 <div style="line-height: 1.8;">
                     {{ vacancy.description|safe }}
                 </div>
-                <form action="/echo" class="card mt-4 mb-3" enctype="multipart/form-data">
-                    <div class="card-body mx-3">
-                        <p class="h5 mt-3 font-weight-normal">Отозваться на вакансию</p>
-                        <div class="form-group">
-                            <label class="mb-1 mt-2" for="userName">Вас зовут</label>
-                            <input class="form-control" type="text" placeholder="" id="userName">
-                        </div>
-                        <div class="form-group">
-                            <label class="mb-1" for="userPhone">Ваш телефон</label>
-                            <input class="form-control" type="tel" placeholder="" id="userPhone">
-                        </div>
-                        <div class="form-group">
-                            <label class="mb-1" for="userMsg">Сопроводительное письмо</label>
-                            <textarea class="form-control" rows="8" id="userMsg"></textarea>
-                        </div>
-                        <input type="submit" class="btn btn-primary mt-4 mb-2" value="Записаться на пробный урок">
-                    </div>
-                </form>
+                <div class="card">
+                    <p class="h5 mt-3 font-weight-normal">Отозваться на вакансию</p>
+                    {% crispy form "bootstrap4" %}
+                </div>
             </section>
         </div>
     </div>

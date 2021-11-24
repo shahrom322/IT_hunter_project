@@ -1,3 +1,5 @@
+from django.contrib.auth.models import User
+from django.core.validators import RegexValidator
 from django.db import models
 
 
@@ -48,6 +50,12 @@ class Company(models.Model):
     )
     description = models.TextField('Информация о компании')
     employee_count = models.PositiveSmallIntegerField('Количество сотрудников')
+    owner = models.OneToOneField(
+        User,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True
+    )
 
     def __str__(self):
         return self.name
@@ -70,3 +78,31 @@ class Specialty(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class Application(models.Model):
+    written_username = models.CharField('Имя', max_length=50)
+    phone_regex = RegexValidator(
+        regex=r'^\+?1?\d{9,15}$',
+        message="Phone number must be entered in the format: '+999999999'"
+    )
+    written_phone = models.CharField(
+        'Телефон ',
+        validators=[phone_regex],
+        max_length=17,
+        blank=True,
+    )
+    written_cover_letter = models.TextField('Сопроводительное письмо')
+    vacancy = models.ForeignKey(
+        Vacancy,
+        on_delete=models.CASCADE,
+        related_name='applications'
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='applications'
+    )
+
+    def __str__(self):
+        return self.written_username

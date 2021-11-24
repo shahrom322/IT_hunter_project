@@ -1,4 +1,90 @@
 {% extends 'base.html' %}
 {% block title %}{{ block.super }}:{% endblock %}
 {% block content %}
+<main class="container mt-3 pb-5">
+    <div class="row mt-5">
+        <div class="col-12 col-lg-4">
+            <aside class="pt-3 pb-4 px-4 mb-5 card">
+                <h1 class="h4 pt-2 pb-2">Моя компания</h1>
+                <div class="nav flex-column nav-pills">
+                    <a class="nav-link active" href="{% url 'my_company' %}">1. Информация о&nbsp;компании</a>
+                    <a class="nav-link" href="#">2. Вакансии</a>
+                </div>
+            </aside>
+        </div>
+        <div class="col-12 col-lg-8">
+            <div class="card">
+                <div class="card-body px-4 pb-4">
+                    <!-- Tab -->
+                    <section class="tab-pane fade show active">
+                        <h2 class="h4 pt-2 pb-3">Информация о&nbsp;компании</h2>
+
+                        {% if request.path == '/mycompany/create' %}
+                        <form action="{% url 'create_company' %}" method="post" enctype="multipart/form-data">
+                        {% else %}
+                        <form action="{% url 'my_company' %}" method="post" enctype="multipart/form-data">
+                        {% endif %}
+                                {% csrf_token %}
+
+                                <div class="row">
+                                    <div class="col-12 col-md-6">
+                                        <div class="form-group pb-2">
+                                            <label class="mb-2 text-dark" for="companyName">Название компании</label>
+                                            {{ form.name }}
+                                        </div>
+                                    </div>
+                                    <div class="col-12 col-md-6">
+                                        <div class="form-group">
+                                            <label class="mb-2 text-dark" for="companyLogo">Логотип</label>
+                                            <div class="row align-items-center">
+                                                <div class="col-6">
+                                                    {% if logo %}
+                                                    <img src="{{ logo.url }}" alt=""
+                                                         style="max-width: 120px;height: auto;">
+                                                    {% endif %}
+                                                </div>
+                                                <div class="col-6" style="position: relative;">
+                                                    <div class="input-group-prepend"
+                                                         style="position: absolute; top: 0;right: 15px;">
+                                                        <span class="btn btn-info px-4">Загрузить</span><br>
+                                                    </div>
+                                                    <div class="custom-file" style="">
+                                                        <input type="file" name="logo" class="custom-file-input"
+                                                               id="inputGroupFile01">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-12 col-md-6">
+                                        <div class="form-group pb-2">
+                                            <label class="mb-2 text-dark" for="companyTeam">Количество человек в
+                                                компании</label>
+                                            {{ form.employee_count }}
+                                        </div>
+                                    </div>
+                                    <div class="col-12 col-md-6">
+                                        <div class="form-group pb-2">
+                                            <label class="mb-2 text-dark" for="companyLocation">География</label>
+                                            {{ form.location }}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group pb-2">
+                                    <label class="mb-2 text-dark" for="companyInfo">Информация о&nbsp;компании</label>
+                                    {{ form.description }}
+                                </div>
+                                <div class="form-group">
+                                    <input type="submit" class="btn btn-info" value="Сохранить">
+                                </div>
+                            </form>
+                    </section>
+                    <!-- END Tab -->
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
 {% endblock %}

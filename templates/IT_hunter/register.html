@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block title %}{{ block.super }}:{% endblock %}
+{% block content %}
+{% load crispy_forms_tags %}
+<main class="container">
+    <div class="row">
+        <div class="col-8 col-lg-4 offset-2 offset-lg-4">
+
+            {% crispy form "bootstrap4" %}
+
+            <div class="mt-4 text-center"><p>Есть аккаунт? <a href="{% url 'login' %}">Войдите!</a></p></div>
+
+
+        </div>
+    </div>
+</main>
+{% endblock %}
