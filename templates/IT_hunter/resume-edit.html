@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% block title %}{{ block.super }}:{% endblock %}
+{% block content %}
+<style>
+    body {
+      background-color: #F6F2E6;
+    }
+</style>
+<main class="container mt-3 pb-5">
+    <section class="col-12 col-lg-6 offset-lg-3 mt-5 card">
+      <div class="card-body px-3 pb-4">
+        <h1 class="h4 pt-2 pb-3">Мое резюме</h1>
+        {% if request.path == '/myresume/create' %}
+        <form action="{% url 'create_resume' %}" enctype="multipart/form-data" method="post">
+        {% else %}
+        <form action="{% url 'my_resume' %}" enctype="multipart/form-data" method="post">
+        {% endif %}
+        {% csrf_token %}
+          <div class="row">
+            <div class="col-12 col-md-6">
+              <div class="form-group pb-2">
+                <label class="mb-2 text-dark" for="userName">Имя</label>
+                {{ form.name }}
+              </div>
+            </div>
+            <div class="col-12 col-md-6">
+              <div class="form-group pb-2">
+                <label class="mb-2 text-dark" for="userSurname">Фамилия</label>
+                {{ form.surname }}
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-12 col-md-6">
+              <div class="form-group pb-2">
+                <label class="mb-2 text-dark" for="userReady">Готовность к работе</label>
+                {{ form.status }}
+              </div>
+            </div>
+            <div class="col-12 col-md-6">
+              <div class="form-group pb-2">
+                <label class="mb-2 text-dark" for="userSalary">Ожидаемое вознаграждение</label>
+                {{ form.salary }}
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-12 col-md-6">
+              <div class="form-group pb-2">
+                <label class="mb-2 text-dark" for="userSpecialization">Специализация</label>
+                {{ form.specialty }}
+              </div>
+            </div>
+            <div class="col-12 col-md-6">
+              <div class="form-group pb-2">
+                <label class="mb-2 text-dark" for="userQualification">Квалификация</label>
+                {{ form.grade }}
+              </div>
+            </div>
+          </div>
+          <div class="form-group pb-2">
+            <label class="mb-2 text-dark" for="userEducation">Образование</label>
+            {{ form.education }}
+          </div>
+          <div class="form-group pb-2">
+            <label class="mb-2 text-dark" for="userExperience">Опыт работы</label>
+            {{ form.experience }}
+          </div>
+          <div class="form-group pb-3">
+            <label class="mb-2 text-dark" for="userPortfolio">Ссылка на портфолио</label>
+            {{ form.portfolio }}
+          </div>
+          <div class="form-group">
+            <input type="submit" class="btn btn-info" value="Сохранить">
+          </div>
+        </form>
+      </div>
+    </section>
+  </main>
+{% endblock %}

@@ -1,12 +1,12 @@
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.views import LoginView
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.http import HttpResponseBadRequest, HttpResponseServerError, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.views.generic import TemplateView
 
-from IT_hunter.forms import SignupForm, LoginForm, ApplicationForm, CompanyForm
+from IT_hunter.forms import SignupForm, LoginForm, ApplicationForm, CompanyForm, VacancyForm, ResumeForm
 from IT_hunter.models import Specialty, Company, Vacancy
 
 
@@ -15,7 +15,7 @@ class MainView(TemplateView):
 
     def get_context_data(self, **kwargs):
         specialties = Specialty.objects.all().annotate(vacancy_count=Count('vacancies'))
-        companies = Company.objects.all().annotate(vacancy_count=Count('vacancies'))
+        companies = Company.objects.all().annotate(vacancy_count=Count('vacancies'))[:8]
         return {
                 'specialties': specialties,
                 'companies': companies
@@ -29,7 +29,7 @@ class VacanciesList(TemplateView):
         context = super().get_context_data(**kwargs)
         vacancies = Vacancy.objects.select_related('specialty', 'company')
         context['vacancies'] = vacancies
-        context['vacancies_count'] = vacancies.count()
+        context['vacancies_count'] = len(vacancies)
         return context
 
 
@@ -40,7 +40,7 @@ class VacanciesBySpecialties(TemplateView):
         context = super().get_context_data(**kwargs)
         vacancies = Vacancy.objects.filter(specialty__code=kwargs['code']).select_related('specialty', 'company')
         context['vacancies'] = vacancies
-        context['vacancies_count'] = vacancies.count()
+        context['vacancies_count'] = len(vacancies)
         return context
 
 
@@ -49,7 +49,7 @@ class VacancyDetail(TemplateView):
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['vacancy'] = get_object_or_404(Vacancy, id=kwargs['id'])
+        context['vacancy'] = get_object_or_404(Vacancy.objects.select_related('company', 'specialty'), id=kwargs['id'])
         context['form'] = ApplicationForm()
         return context
 
@@ -79,12 +79,7 @@ class CompanyDetail(TemplateView):
         return context
 
 
-class SendVacancyView(TemplateView):
-    template_name = 'IT_hunter/send.html'
-
-
 class MyCompanyView(TemplateView):
-    template_name = 'IT_hunter/company-edit.html'
 
     def get(self, request, *args, **kwargs):
         try:
@@ -109,8 +104,6 @@ class MyCompanyView(TemplateView):
 
 
 class CreateCompanyView(TemplateView):
-    # TODO протестировать создание компании, вывод лого
-
     template_name = 'IT_hunter/company-edit.html'
 
     def get_context_data(self, *, object_list=None, **kwargs):
@@ -118,16 +111,62 @@ class CreateCompanyView(TemplateView):
         context['form'] = CompanyForm()
         return context
 
+    def post(self, request, *args, **kwargs):
+        form = CompanyForm(request.POST)
+        if form.is_valid():
+            form.save(request)
+            return HttpResponseRedirect('/mycompany/')
+        return render(request, 'IT_hunter/company-edit.html', {'form': form})
+
 
 class MyVacanciesView(TemplateView):
-    template_name = ''
+    template_name = 'IT_hunter/vacancy-list.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # TODO оптимизировать запрос .prefetch_related('applications')
+        context['vacancies'] = Vacancy.objects.prefetch_related(
+            'applications').filter(company=self.request.user.company)
+        return context
 
 
 class MyVacancyView(TemplateView):
-    template_name = ''
+
+    def get(self, request, id, *args, **kwargs):
+        vacancy = Vacancy.objects.get(id=id)
+        applications = vacancy.applications.all()
+        form = VacancyForm(instance=vacancy)
+        return render(request, 'IT_hunter/vacancy-edit.html', context={
+            'form': form,
+            'vacancy': vacancy,
+            'applications_count': len(applications),
+            'applications': applications,
+        })
+
+    def post(self, request, id, *args, **kwargs):
+        form = VacancyForm(request.POST)
+        if form.is_valid():
+            form.save(request, id)
+            return HttpResponseRedirect('/mycompany/vacancies')
+        return render(request, 'IT_hunter/vacancy-edit.html', {'form': form})
+
+
+class CreateVacancyView(TemplateView):
+
+    def get(self, request, *args, **kwargs):
+        form = VacancyForm()
+        return render(request, 'IT_hunter/vacancy-create.html', {'form': form})
+
+    def post(self, request, *args, **kwargs):
+        form = VacancyForm(request.POST)
+        if form.is_valid():
+            form.save(request, None)
+            return HttpResponseRedirect('/mycompany/vacancies')
+        return render(request, 'IT_hunter/vacancy-create.html', {'form': form})
 
 
 class MyLoginView(LoginView):
+
     def get(self, request, *args, **kwargs):
         form = LoginForm()
         return render(request, 'IT_hunter/login.html', {'form': form})
@@ -159,6 +198,52 @@ class MySignupView(TemplateView):
                 login(request, user)
                 return HttpResponseRedirect('/')
         return render(request, 'IT_hunter/register.html', {'form': form})
+
+
+class MyResumeView(TemplateView):
+
+    def get(self, request, *args, **kwargs):
+        try:
+            form = ResumeForm(instance=request.user.resume)
+            return render(request, 'IT_hunter/resume-edit.html', {'form': form})
+        except ObjectDoesNotExist:
+            return render(request, 'IT_hunter/resume-create.html')
+
+    def post(self, request, *args, **kwargs):
+        form = ResumeForm(request.POST)
+        if form.is_valid():
+            form.save(request)
+            return HttpResponseRedirect('/myresume/')
+        return render(request, 'IT_hunter/resume-edit.html', {'form': form})
+
+
+class CreateResumeView(TemplateView):
+    template_name = 'IT_hunter/resume-edit.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['form'] = ResumeForm()
+        return context
+
+    def post(self, request, *args, **kwargs):
+        form = ResumeForm(request.POST)
+        if form.is_valid():
+            form.save(request)
+            return HttpResponseRedirect('/myresume/')
+        return render(request, 'IT_hunter/resume-edit.html', {'form': form})
+
+
+class SearchView(TemplateView):
+    template_name = 'IT_hunter/search.html'
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        search_query = self.request.GET.get('search')
+        vacancies = Vacancy.objects.select_related(
+            'specialty', 'company').filter(Q(skills__icontains=search_query)|Q(title__icontains=search_query))
+        context['vacancies'] = vacancies
+        context['vacancies_count'] = len(vacancies)
+        return context
 
 
 def custom_handler404(request, exception):

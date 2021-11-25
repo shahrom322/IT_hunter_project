@@ -45,7 +45,7 @@ class Company(models.Model):
     )
     logo = models.ImageField(
         'Логотип',
-        upload_to='speciality_images',
+        upload_to='company_images',
         default='https://place-hold.it/100x60',
     )
     description = models.TextField('Информация о компании')
@@ -72,7 +72,7 @@ class Specialty(models.Model):
     )
     picture = models.ImageField(
         'Картинка',
-        upload_to='company_images',
+        upload_to='specialties_images',
         default='https://place-hold.it/100x60'
     )
 
@@ -106,3 +106,51 @@ class Application(models.Model):
 
     def __str__(self):
         return self.written_username
+
+
+class Resume(models.Model):
+    STATUS = [
+        ('0', 'Не ищу работу'),
+        ('1', 'Рассматриваю предложения'),
+        ('2', 'Ищу работу')
+    ]
+    GRADE = [
+        ('0', 'Стажер'),
+        ('1', 'Джуниор'),
+        ('2', 'Мидл'),
+        ('3', 'Сеньор'),
+        ('4', 'Лид')
+    ]
+
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True
+    )
+    name = models.CharField('Имя', max_length=50)
+    surname = models.CharField('Фамилия', max_length=50)
+    status = models.CharField(
+        'Статус',
+        choices=STATUS,
+        default=None,
+        max_length=50
+    )
+    salary = models.PositiveIntegerField('Зарплата')
+    specialty = models.ForeignKey(
+        Specialty,
+        on_delete=models.CASCADE,
+        related_name='resume'
+    )
+    grade = models.CharField(
+        'Квалификация',
+        choices=GRADE,
+        default=None,
+        max_length=50
+    )
+    education = models.CharField('Образование', max_length=100)
+    experience = models.TextField('Опыт работы')
+    portfolio = models.CharField('Портфолио', max_length=100)
+
+    def __str__(self):
+        return f'{self.name} {self.surname}'
