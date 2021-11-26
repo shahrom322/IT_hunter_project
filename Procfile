@@ -1,1 +1,1 @@
-web: gunicorn IT_hunter.wsgi
+web: gunicorn config.wsgi
