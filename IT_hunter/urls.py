@@ -11,8 +11,7 @@ handler404 = custom_handler404
 handler500 = custom_handler500
 urlpatterns = [
     path('', MainView.as_view(), name='main'),
-    # TODO regex search view
-    path('search', SearchView.as_view(), name='search'),
+    path('search/', SearchView.as_view(), name='search'),
 
     path('vacancies/', VacanciesList.as_view(), name='vacancies'),
     path('vacancies/cat/<str:code>', VacanciesBySpecialties.as_view(), name='vacancies_by_specialties'),

@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}Джуманджи{% endblock %}
+{% block title %}Поиск вакансий : {{ block.super }}{% endblock %}
 {% block content %}
 {% load static %}
 <main class="container mt-3">
@@ -10,19 +10,16 @@
                 <form class="form-inline mb-3" enctype="multipart/form-data" method="get" action="{% url 'search' %}">
                     <div class="form-group col-8 col-md-10 pl-0">
                         <input class="form-control w-100" type="search" placeholder="Найти работу или стажировку"
-                               aria-label="Найти работу или стажировку" name="search" value="{{ request.GET.search }}">
+                               aria-label="Найти работу или стажировку" name="q" value="{{ request.GET.q }}">
                     </div>
                     <div class="form-group col-4 col-md-2 pl-0">
                         <button class="btn btn-primary w-100" type="submit">Найти</button>
                     </div>
                 </form>
                 <p>Например:
-                    <a href="#" class="text-dark border-bottom border-dark m-1 text-decoration-none">Python</a>
-                    <a href="#" class="text-dark border-bottom border-dark m-1 text-decoration-none">Flask</a>
-                    <a href="#" class="text-dark border-bottom border-dark m-1 text-decoration-none">Django</a>
-                    <a href="#" class="text-dark border-bottom border-dark m-1 text-decoration-none">Парсинг</a>
-                    <a href="#" class="text-dark border-bottom border-dark m-1 text-decoration-none">ML</a>
-
+                    {% for example in examples %}
+                    <a href="{% url 'search' %}?q={{ example }}" class="text-dark border-bottom border-dark m-1 text-decoration-none">{{ example }}</a>
+                    {% endfor %}
                 </p>
             </div>
         </div>
@@ -35,13 +32,15 @@
                     <div class="card-body px-4">
                         <div class="row">
                             <div class="col-12 col-md-8 col-lg-9">
-                                <h2 class="h2 pb-2">{{ vacancy.title }}</h2>
+                                <h2 class="h2 pb-2">
+                                    <a href="{% url 'vacancy_detail' vacancy.id %}">{{ vacancy.title }}</a>
+                                </h2>
                                 <p class="mb-2">{{ vacancy.skills }}</p>
                                 <p>От {{ vacancy.salary_min }} до {{ vacancy.salary_max }} руб.</p>
                                 <p class="text-muted pt-1">{{ vacancy.published_at }}</p>
                             </div>
                             <div class="col-12 col-md-4 col-lg-3 d-flex align-items-end">
-                                <a href="#"><img src="{{ vacancy.company.logo.url  }}" width="130" height="80"
+                                <a href="{% url 'company_detail' vacancy.company.id %}"><img src="{{ vacancy.company.logo.url  }}" width="130" height="80"
                                                  alt=""></a>
                             </div>
                         </div>

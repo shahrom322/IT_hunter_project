@@ -16,9 +16,14 @@ class MainView(TemplateView):
     def get_context_data(self, **kwargs):
         specialties = Specialty.objects.all().annotate(vacancy_count=Count('vacancies'))
         companies = Company.objects.all().annotate(vacancy_count=Count('vacancies'))[:8]
+
+        vacancy = Vacancy.objects.first()
+        examples = vacancy.skills.split(', ')[:4]
+
         return {
                 'specialties': specialties,
-                'companies': companies
+                'companies': companies,
+                'examples': examples,
         }
 
 
@@ -238,11 +243,12 @@ class SearchView(TemplateView):
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
-        search_query = self.request.GET.get('search')
+        search_query = self.request.GET.get('q')
         vacancies = Vacancy.objects.select_related(
             'specialty', 'company').filter(Q(skills__icontains=search_query)|Q(title__icontains=search_query))
-        context['vacancies'] = vacancies
         context['vacancies_count'] = len(vacancies)
+        context['vacancies'] = vacancies
+        context['examples'] = Vacancy.objects.first().skills.split(', ')[:4]
         return context
 
 

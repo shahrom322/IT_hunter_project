@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
-{% block title %}{{ block.super }}:{% endblock %}
+{% block title %}Моя компания : {{ block.super }}{% endblock %}
 {% block content %}
+<!--suppress ALL -->
 <main class="container mt-3 pb-5">
     <div class="row mt-5">
         <div class="col-12 col-lg-4">
@@ -60,6 +61,7 @@
                                 <div class="row">
                                     <div class="col-12 col-md-6">
                                         <div class="form-group pb-2">
+                                            <!--suppress XmlInvalidId -->
                                             <label class="mb-2 text-dark" for="companyTeam">Количество человек в
                                                 компании</label>
                                             {{ form.employee_count }}
