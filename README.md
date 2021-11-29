@@ -1,12 +1,12 @@
 # JUMANDJI
 _This is my second Django project. Site for job search._
 
-Short description:
-:white_check_mark:Possibility of user registration.
-:white_check_mark:Registration of user company and vacancies.
-:white_check_mark:Ability to leave a response to a vacancy.
-:white_check_mark:Search for all vacancies on the site.
-:white_check_mark:Possibility of registering a user's resume
+Short description:<br>
+:white_check_mark:Possibility of user registration.<br>
+:white_check_mark:Registration of user company and vacancies.<br>
+:white_check_mark:Ability to leave a response to a vacancy.<br>
+:white_check_mark:Search for all vacancies on the site.<br>
+:white_check_mark:Possibility of registering a user's resume<br>
 
 
 ![site](https://sun9-36.userapi.com/impf/_60rSgouv4lxo8F-ZgUqd-bIAAKyfayK9FpRag/DFd5s83IOv4.jpg?size=1919x1037&quality=96&sign=a9d67302bb672dbc54a89a5c361db160&type=album "site")
