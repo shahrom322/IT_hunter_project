@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}Вакансии : {{ block.super }}{% endblock %}
+{% block content %}
+{% load user_tags %}
+<main class="container mt-3">
+    <section>
+        <h1 class="h1 text-center mx-auto mt-4 pt-5" style="font-size: 70px;"><strong>Резюме</strong></h1>
+        <p class="text-center pt-1">{{ resumes_count }} резюме</p>
+        <div class="row mt-5">
+            <div class="col-12 col-lg-8 offset-lg-2 m-auto">
+                {% for resume in resumes %}
+                <div class="card mb-4">
+                    <div class="card-body px-4">
+                        <div class="row">
+                            <div class="col-12 col-md-8 col-lg-9">
+                                <h2 class="h2 pb-2">
+                                    <a href="{% url 'resume_detail' resume.id %}">
+                                        {{ resume.name }} {{ resume.surname }}
+                                    </a>
+                                </h2>
+                                <p class="mb-2">{{ resume.get_grade_display }} • {{ resume.specialty }} • {{ resume.get_status_display }}</p>
+                                <p>Ожидаемая заработная плата: {{ resume.salary }} руб.</p>
+                                <p class="text-muted pt-1">{{ resume.experience|truncatewords:20 }}</p>
+                            </div>
+                            <div class="col-12 col-md-4 col-lg-3 d-flex align-items-end">
+                                <a href="{% url 'resume_detail' resume.id %}"><img src="{{ resume.photo.url }}" width="130" height="80" alt=""></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+</main>
+{% endblock %}

@@ -4,11 +4,15 @@ from django import forms
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
+from django.core.validators import RegexValidator
 
 from IT_hunter.models import Application, Vacancy, Company, Resume
 
 
 class SignupForm(forms.Form):
+    """
+    Форма для регистрации на сайте.
+    """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -20,12 +24,20 @@ class SignupForm(forms.Form):
         self.helper.label_class = 'col-lg-6'
         self.helper.field_class = 'col-lg-12'
 
-    username = forms.CharField(label='Логин', max_length=20)
+    username_regex = RegexValidator(r'^[a-z0-9_-]{6,16}')
+    username = forms.CharField(
+        label='Логин',
+        max_length=20,
+        validators=[username_regex],
+        required=True,
+        help_text='Логин должен насчитывать от 6 до 16 символов и может состоять из латинских букв и цифр.'
+    )
     first_name = forms.CharField(label='Имя', max_length=20)
     last_name = forms.CharField(label='Фамилия', max_length=20)
     email = forms.CharField(
         label='Почтовый адресс',
-        widget=forms.EmailInput()
+        widget=forms.EmailInput(),
+        help_text='Минимум 6 символов'
     )
     password = forms.CharField(label='Пароль', widget=forms.PasswordInput())
     repeat_password = forms.CharField(
@@ -40,13 +52,15 @@ class SignupForm(forms.Form):
         if password != confirm_password:
             raise forms.ValidationError('Пароли не совпадают')
 
-        username = self.cleaned_data['username']
+        username = self.cleaned_data.get('username', None)
 
-        for user in User.objects.all():
-            if username in user.username:
-                raise forms.ValidationError(
-                    'Пользователь с таким логином уже существует'
-                )
+        if not username:
+            raise forms.ValidationError('Поле логина не верно')
+
+        if User.objects.filter(username=username):
+            raise forms.ValidationError(
+                'Пользователь с таким логином уже существует'
+            )
 
     def save(self):
         user = User.objects.create_user(
@@ -62,6 +76,9 @@ class SignupForm(forms.Form):
 
 
 class LoginForm(forms.Form):
+    """
+    Форма для авторизации на сайте.
+    """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -78,6 +95,9 @@ class LoginForm(forms.Form):
 
 
 class ApplicationForm(forms.Form):
+    """
+    Форма для создания отклика на вакансию.
+    """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -124,7 +144,9 @@ class ApplicationForm(forms.Form):
 
 
 class CompanyForm(forms.ModelForm):
-
+    """
+    Фомра для создания своей компании.
+    """
     class Meta:
         model = Company
         fields = ('name', 'location', 'description', 'employee_count')
@@ -170,6 +192,9 @@ class CompanyForm(forms.ModelForm):
 
 
 class VacancyForm(forms.ModelForm):
+    """
+    Форма для создания своей вакансии.
+    """
     class Meta:
         model = Vacancy
         fields = ('title', 'specialty', 'skills', 'description', 'salary_min', 'salary_max')
@@ -220,6 +245,9 @@ class VacancyForm(forms.ModelForm):
 
 
 class ResumeForm(forms.ModelForm):
+    """
+    Форма для создания своего резюме.
+    """
     class Meta:
         model = Resume
         fields = (

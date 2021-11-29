@@ -9,9 +9,14 @@
             <ul class="navbar-nav col-10">
                 <li class="nav-item">
                     <a class="nav-link" href="{% url 'vacancies' %}">Вакансии</a>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'resumes' %}">Резюме</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'companies' %}">Компании</a>
                 </li>
             </ul>
-           {% if request.user.is_authenticated %}
+            {% if request.user.is_authenticated %}
             <ul class="navbar-nav col-2 justify-content-end">
                 <li class="nav-item active">
                     <div class="btn-group">

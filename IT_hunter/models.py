@@ -11,12 +11,14 @@ class Vacancy(models.Model):
     specialty = models.ForeignKey(
         'Specialty',
         on_delete=models.CASCADE,
-        related_name='vacancies'
+        related_name='vacancies',
+        verbose_name='Специальность',
     )
     company = models.ForeignKey(
         'Company',
         on_delete=models.CASCADE,
-        related_name='vacancies'
+        related_name='vacancies',
+        verbose_name='Компания'
     )
     skills = models.CharField(
         'Навыки',
@@ -32,6 +34,9 @@ class Vacancy(models.Model):
 
     def __str__(self):
         return self.title
+
+    class Meta:
+        ordering = ['-published_at']
 
 
 class Company(models.Model):
@@ -54,7 +59,8 @@ class Company(models.Model):
         User,
         on_delete=models.SET_NULL,
         blank=True,
-        null=True
+        null=True,
+        verbose_name='Владелец'
     )
 
     def __str__(self):
@@ -96,12 +102,14 @@ class Application(models.Model):
     vacancy = models.ForeignKey(
         Vacancy,
         on_delete=models.CASCADE,
-        related_name='applications'
+        related_name='applications',
+        verbose_name='Вакансия'
     )
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='applications'
+        related_name='applications',
+        verbose_name='Пользователь'
     )
 
     def __str__(self):
@@ -126,7 +134,8 @@ class Resume(models.Model):
         User,
         on_delete=models.CASCADE,
         blank=True,
-        null=True
+        null=True,
+        verbose_name='Пользователь'
     )
     name = models.CharField('Имя', max_length=50)
     surname = models.CharField('Фамилия', max_length=50)
@@ -140,7 +149,8 @@ class Resume(models.Model):
     specialty = models.ForeignKey(
         Specialty,
         on_delete=models.CASCADE,
-        related_name='resume'
+        related_name='resume',
+        verbose_name='Специальность'
     )
     grade = models.CharField(
         'Квалификация',
@@ -148,9 +158,28 @@ class Resume(models.Model):
         default=None,
         max_length=50
     )
+    photo = models.ImageField(
+        'Фотография',
+        upload_to='user_images',
+        default='https://place-hold.it/100x60',
+    )
     education = models.CharField('Образование', max_length=100)
-    experience = models.TextField('Опыт работы')
+    experience = models.TextField('Опыт работы', null=True)
+    description = models.TextField('О себе', null=True)
     portfolio = models.CharField('Портфолио', max_length=100)
+    phone = RegexValidator(
+        regex=r'^\+?1?\d{9,15}$',
+        message="Телефонный номер должен быть в формате: '+999999999'"
+    )
+    phone = models.CharField(
+        'Телефон ',
+        validators=[phone],
+        max_length=17,
+        blank=True
+    )
 
     def __str__(self):
         return f'{self.name} {self.surname}'
+
+    class Meta:
+        ordering = ['-pk']

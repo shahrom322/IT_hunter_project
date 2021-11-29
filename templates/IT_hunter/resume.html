@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% block title %}{{ vacancy.title }} : {{ block.super }}{% endblock %}
+{% block content %}
+{% load user_tags %}
+{% load static %}
+<main class="container mt-3 pb-5">
+    <div class="row mt-5">
+        <div class="col-12 col-lg-2">
+            <div class="pl-3 mb-5">
+                <p><a href="{{ request.META.HTTP_REFERER }}">Назад</a></p>
+            </div>
+        </div>
+        <div class="col-12 col-lg-8">
+            <section class="pl-3">
+                <div class="d-flex align-items-baseline align-content-baseline">
+                    <h1 class="h2 mt-4 font-weight-bold">{{ resume.name }} {{ resume.surname }}</h1>
+                    <p class="m-0 pl-3">{{ resume.salary|convert_digit }} Р</p>
+                </div>
+                <p class="mt-2">{{ resume.get_grade_display }} • {{ resume.get_status_display }}</p>
+                <p class="text-muted mb-4"><strong>Специальность</strong>:
+                    <a href="{% url 'vacancies_by_specialties' resume.specialty.code %}">
+                        {{ resume.specialty }}
+                    </a>
+                </p>
+                <hr>
+                <div style="line-height: 1.8;">
+                    <strong>Образование:</strong><br>
+                    {{ resume.education|safe }}
+                </div>
+                <hr>
+                <div style="line-height: 1.8;">
+                    <strong>Опыт работы:</strong><br>
+                    {{ resume.experience|safe }}
+                </div>
+                <hr>
+                <div style="line-height: 1.8;">
+                    <strong>О себе:</strong><br>
+                    {{ resume.description|safe }}
+                </div>
+                <hr>
+                <div style="line-height: 1.8;">
+                    <strong>Портфолио:</strong><br>
+                    {{ resume.portfolio }}
+                </div>
+                <hr>
+                <div class="card">
+                    <p class="h5 mt-3 font-weight-normal">
+                        <strong>Отозваться на резюме</strong><br>
+                        {% if request.user.is_authenticated %}
+                        <a href="tel:+79999999999">{{ resume.phone }}</a>
+                        {% else %}
+                        <a href="{% url 'login' %}">Войдите</a> или <a href="{% url 'register' %}"> зарегистрируйтесь</a> на сайте, чтобы увидеть номер.
+                        {% endif %}
+                    </p>
+                </div>
+            </section>
+        </div>
+        <div class="col-12 col-lg-2">
+            <img src="{{ resume.photo.url }}" width="190" height="150" alt="">
+        </div>
+    </div>
+</main>
+{% endblock %}
