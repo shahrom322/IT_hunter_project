@@ -112,7 +112,7 @@ INTERNAL_IPS = ['127.0.0.1', ]
 
 LANGUAGE_CODE = 'ru'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Europe/Moscow'
 
 USE_I18N = True
 

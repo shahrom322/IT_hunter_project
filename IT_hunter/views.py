@@ -1,5 +1,5 @@
 from django.contrib.auth import login, authenticate
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.contrib.auth.views import LoginView
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Count, Q
@@ -9,6 +9,9 @@ from django.views.generic import TemplateView
 
 from IT_hunter.forms import SignupForm, LoginForm, ApplicationForm, CompanyForm, VacancyForm, ResumeForm
 from IT_hunter.models import Specialty, Company, Vacancy, Resume
+
+
+User = get_user_model()
 
 
 class MainView(TemplateView):
