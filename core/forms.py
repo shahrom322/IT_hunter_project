@@ -13,19 +13,14 @@ User = get_user_model()
 
 
 class SignupForm(forms.Form):
-    """
-    Форма для регистрации на сайте.
-    """
+    """Форма для регистрации на сайте."""
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.helper = FormHelper()
         self.helper.form_method = 'post'
         self.helper.add_input(Submit('submit', 'Зарегистрироваться'))
-
-        self.helper.form_class = 'form-signup pt-5'
-        self.helper.label_class = 'col-lg-6'
-        self.helper.field_class = 'col-lg-12'
 
     username_regex = RegexValidator(r'^[a-z0-9_-]{6,16}')
     username = forms.CharField(
@@ -60,7 +55,7 @@ class SignupForm(forms.Form):
         if not username:
             raise forms.ValidationError('Поле логина не верно')
 
-        if User.objects.filter(username=username):
+        if User.objects.filter(username=username).exists():
             raise forms.ValidationError(
                 'Пользователь с таким логином уже существует'
             )
@@ -79,9 +74,8 @@ class SignupForm(forms.Form):
 
 
 class LoginForm(forms.Form):
-    """
-    Форма для авторизации на сайте.
-    """
+    """Форма для авторизации на сайте."""
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -89,27 +83,19 @@ class LoginForm(forms.Form):
         self.helper.form_method = 'post'
         self.helper.add_input(Submit('submit', 'Войти'))
 
-        self.helper.form_class = "form-signin pt-5"
-        self.helper.label_class = "col-lg-6"
-        self.helper.field_class = "col-lg-12"
-
     username = forms.CharField(label='Логин', max_length=20)
     password = forms.CharField(label='Пароль', widget=forms.PasswordInput())
 
 
 class ApplicationForm(forms.Form):
-    """
-    Форма для создания отклика на вакансию.
-    """
+    """Форма для создания отклика на вакансию."""
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.helper = FormHelper()
         self.helper.form_method = "post"
         self.helper.add_input(Submit('submit', 'Отправить'))
-
-        self.helper.form_class = "card mt-4 mb-3"
-        self.helper.label_class = "col-lg-6"
 
     written_username = forms.CharField(
         label='Имя',
@@ -147,9 +133,8 @@ class ApplicationForm(forms.Form):
 
 
 class CompanyForm(forms.ModelForm):
-    """
-    Фомра для создания своей компании.
-    """
+    """Фомра для создания своей компании."""
+
     class Meta:
         model = Company
         fields = ('name', 'location', 'description', 'employee_count')
@@ -167,14 +152,13 @@ class CompanyForm(forms.ModelForm):
                 'id': "companyInfo",
                 'rows': "4",
             }),
-            'employee_count': forms.TextInput(attrs={
+            'employee_count': forms.NumberInput(attrs={
                 'class': "form-control",
                 'id': "companyTeam",
             })
         }
 
     def save(self, request):
-        print(request.FILES)
         if len(request.FILES) != 0:
             logo = "/company_images/" + str(request.FILES['logo'])
         else:

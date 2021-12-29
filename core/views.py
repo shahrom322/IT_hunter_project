@@ -1,14 +1,15 @@
+from django.contrib import messages
 from django.contrib.auth import login, authenticate
 from django.contrib.auth import get_user_model
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LoginView
 from django.db.models import Count, Q
 from django.http import HttpResponseBadRequest, HttpResponseServerError, HttpResponseRedirect
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, render, redirect
 from django.views.generic import TemplateView
 
 from core.forms import SignupForm, LoginForm, ApplicationForm, CompanyForm, VacancyForm, ResumeForm
 from core.models import Specialty, Company, Vacancy, Resume
-
 
 User = get_user_model()
 
@@ -26,9 +27,9 @@ class MainView(TemplateView):
         examples_for_search = vacancy.skills.split(', ')[:4]
 
         return {
-                'specialties': specialties,
-                'companies': companies,
-                'examples': examples_for_search,
+            'specialties': specialties,
+            'companies': companies,
+            'examples': examples_for_search,
         }
 
 
@@ -67,19 +68,20 @@ class VacancyDetail(TemplateView):
         context = super().get_context_data(**kwargs)
         context['vacancy'] = get_object_or_404(
             Vacancy.objects.select_related('company', 'specialty'),
-            id=kwargs['id'])
+            pk=kwargs['pk'])
         context['form'] = ApplicationForm()
         return context
 
-    def post(self,  request, pk, *args, **kwargs):
+    def post(self, request, pk, *args, **kwargs):
         form = ApplicationForm(request.POST)
         if form.is_valid():
             form.save(request, pk)
             return render(request, 'core/send.html', {})
-        return render(request, 'core/vacancy.html', self.get_context_data(id=id))
+        messages.warning(request, 'Ошибка валидации')
+        return render(request, 'core/vacancy.html', self.get_context_data(pk=pk))
 
 
-class CompanyDetail(TemplateView):
+class CompanyDetail(LoginRequiredMixin, TemplateView):
     """Вывод страницы описания компании."""
     template_name = 'core/company.html'
 
@@ -91,11 +93,11 @@ class CompanyDetail(TemplateView):
         return context
 
 
-class MyCompanyView(TemplateView):
+class MyCompanyView(LoginRequiredMixin, TemplateView):
     """Если у пользователя создана компания, выводится форма с описанием компании с возможностью редактировать её.
     Если же таковой нет, выводится предложение создать свою компанию."""
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request,  *args, **kwargs):
         try:
             form = CompanyForm(instance=request.user.company)
             return render(
@@ -113,11 +115,13 @@ class MyCompanyView(TemplateView):
         form = CompanyForm(request.POST)
         if form.is_valid():
             form.save(request)
-            return HttpResponseRedirect('/mycompany/')
+            messages.success(request, 'Данные сохранены')
+            return redirect('my_company')
+        messages.warning(request, 'Ошибка валидации')
         return render(request, 'core/company-edit.html', {'form': form})
 
 
-class CreateCompanyView(TemplateView):
+class CreateCompanyView(LoginRequiredMixin, TemplateView):
     """Вывод страницы с формой для создания своей компании."""
 
     template_name = 'core/company-edit.html'
@@ -131,30 +135,33 @@ class CreateCompanyView(TemplateView):
         form = CompanyForm(request.POST)
         if form.is_valid():
             form.save(request)
-            return HttpResponseRedirect('/mycompany/')
+            messages.success(request, 'Данные сохранены')
+            return redirect('my_company')
+        messages.warning(request, 'Ошибка валидации')
         return render(request, 'core/company-edit.html', {'form': form})
 
 
-class MyVacanciesView(TemplateView):
+class MyVacanciesView(LoginRequiredMixin, TemplateView):
     """Вывод страницы со списком вакансий, созданные пользователем."""
 
-    template_name = 'core/vacancy-list.html'
+    def get(self, request, *args, **kwargs):
+        try:
+            vacancies = Vacancy.objects.prefetch_related(
+                'applications').filter(company=request.user.company)
+        except Company.DoesNotExist:
+            messages.warning(request, 'Для начала создайте свою компанию')
+            return redirect('create_company')
+        return render(request, 'core/vacancy-list.html', {'vacancies': vacancies})
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['vacancies'] = Vacancy.objects.prefetch_related(
-            'applications').filter(company=self.request.user.company)
-        return context
 
-
-class MyVacancyView(TemplateView):
+class MyVacancyView(LoginRequiredMixin, TemplateView):
     """Вывод страницы вакансии, созданной пользователем, с возможностью редактировать ее."""
 
     def get(self, request, pk, *args, **kwargs):
-        vacancy = Vacancy.objects.get(id=pk)
+        vacancy = get_object_or_404(Vacancy, pk=pk)
         applications = vacancy.applications.all()
         form = VacancyForm(instance=vacancy)
-        return render(request, 'core/vacancy-edit.html', context={
+        return render(self.request, 'core/vacancy-edit.html', context={
             'form': form,
             'vacancy': vacancy,
             'applications_count': len(applications),
@@ -165,47 +172,50 @@ class MyVacancyView(TemplateView):
         form = VacancyForm(request.POST)
         if form.is_valid():
             form.save(request, pk)
-            return HttpResponseRedirect('/mycompany/vacancies')
+            messages.success(request, 'Вакансия была сохранена')
+            return redirect('my_vacancies')
+        messages.warning(request, 'Ошибка валидации')
         return render(request, 'core/vacancy-edit.html', {'form': form})
 
 
 class CreateVacancyView(TemplateView):
     """Вывод страницы с формой для создания вакансии."""
 
-    def get(self, request, *args, **kwargs):
+    def get(self, *args, **kwargs):
         form = VacancyForm()
-        return render(request, 'core/vacancy-create.html', {'form': form})
+        return render(self.request, 'core/vacancy-create.html', {'form': form})
 
-    def post(self, request, *args, **kwargs):
-        form = VacancyForm(request.POST)
+    def post(self, *args, **kwargs):
+        form = VacancyForm(self.request.POST)
         if form.is_valid():
-            form.save(request, None)
-            return HttpResponseRedirect('/mycompany/vacancies')
-        return render(request, 'core/vacancy-create.html', {'form': form})
+            messages.success(self.request, 'Вакансия была сохранена')
+            return redirect('my_vacancies')
+        messages.warning(self.request, 'Ошибка валидации')
+        return render(self.request, 'core/vacancy-create.html', {'form': form})
 
 
 class MyLoginView(LoginView):
     """Вывод страницы с формой для авторизации на сайте."""
 
-    def get(self, request, *args, **kwargs):
+    def get(self, *args, **kwargs):
         form = LoginForm()
-        return render(request, 'core/login.html', {'form': form})
+        return render(self.request, 'core/login.html', {'form': form})
 
-    def post(self, request, *args, **kwargs):
-        form = LoginForm(request.POST)
+    def post(self, *args, **kwargs):
+        form = LoginForm(self.request.POST)
         if form.is_valid():
             username = form.cleaned_data['username']
             password = form.cleaned_data['password']
-            user = authenticate(request, username=username, password=password)
+            user = authenticate(self.request, username=username, password=password)
             if user is not None:
-                login(request, user)
+                login(self.request, user)
                 return HttpResponseRedirect('/')
             # TODO думаю, что это не безопасно
             if not User.objects.filter(username=username):
                 form.add_error('username', 'Такого пользователя не существует')
             else:
                 form.add_error('password', 'Неверный пароль')
-        return render(request, 'core/login.html', {'form': form})
+        return render(self.request, 'core/login.html', {'form': form})
 
 
 class MySignupView(TemplateView):
@@ -221,7 +231,9 @@ class MySignupView(TemplateView):
             user = form.save()
             if user is not None:
                 login(request, user)
-                return HttpResponseRedirect('/')
+                messages.success(request, 'Аккаунт был создан')
+                return redirect('main')
+        messages.warning(request, 'Ошибка валидации')
         return render(request, 'core/register.html', {'form': form})
 
 
@@ -240,7 +252,9 @@ class MyResumeView(TemplateView):
         form = ResumeForm(request.POST)
         if form.is_valid():
             form.save(request)
-            return HttpResponseRedirect('/myresume/')
+            messages.success(request, 'Резюме было сохранено')
+            return redirect('my_resume')
+        messages.warning(request, 'Ошибка валидации')
         return render(request, 'core/resume-edit.html', {'form': form})
 
 
@@ -258,7 +272,9 @@ class CreateResumeView(TemplateView):
         form = ResumeForm(request.POST)
         if form.is_valid():
             form.save(request)
-            return HttpResponseRedirect('/myresume/')
+            messages.success(request, 'Резюме было сохранено')
+            return redirect('my_resume')
+        messages.warning(request, 'Ошибка валидации')
         return render(request, 'core/resume-edit.html', {'form': form})
 
 
