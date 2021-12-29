@@ -93,7 +93,7 @@ class Application(models.Model):
     written_username = models.CharField('Имя', max_length=50)
     phone_regex = RegexValidator(
         regex=r'^\+?1?\d{9,15}$',
-        message="Phone number must be entered in the format: '+999999999'"
+        message="Телефонный номер должен быть в формате: '+999999999'"
     )
     written_phone = models.CharField(
         'Телефон ',

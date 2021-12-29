@@ -31,8 +31,7 @@ INSTALLED_APPS = [
     'debug_toolbar',
     'crispy_forms',
 
-    'IT_hunter',
-    'IT_hunter.templatetags.user_tags',
+    'core',
 ]
 
 MIDDLEWARE = [
@@ -75,13 +74,7 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': 'mydatabase',
-        # 'ENGINE': 'django.db.backends.mysql',
-        # 'NAME': 'mydb',
-        # 'USER': 'root',
-        # 'PASSWORD': 'root',
-        # 'HOST': '127.0.0.1',
-        # 'PORT': '3306',
+        'NAME': 'sqlite3',
     }
 }
 
@@ -126,14 +119,9 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
-# STATICFILES_DIRS = [
-#     os.path.join(BASE_DIR, 'IT_hunter/static'),
-# ]
 
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
-
-INTERNAL_IPS = ['127.0.0.1']
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field

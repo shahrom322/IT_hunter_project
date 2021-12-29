@@ -6,7 +6,7 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.validators import RegexValidator
 
-from IT_hunter.models import Application, Vacancy, Company, Resume
+from core.models import Application, Vacancy, Company, Resume
 
 
 User = get_user_model()
@@ -136,10 +136,10 @@ class ApplicationForm(forms.Form):
         })
     )
 
-    def save(self, request, id):
+    def save(self, request, pk):
         Application.objects.create(
             user=request.user,
-            vacancy=Vacancy.objects.get(id=id),
+            vacancy=Vacancy.objects.get(pk=pk),
             written_username=self.cleaned_data['written_username'],
             written_phone=self.cleaned_data['written_phone'],
             written_cover_letter=self.cleaned_data['written_cover_letter']

@@ -1,7 +1,7 @@
 from django.contrib.auth.views import LogoutView
 from django.urls import path
 
-from IT_hunter import views
+from core import views
 from config import settings
 
 handler404 = views.custom_handler404
@@ -14,6 +14,7 @@ urlpatterns = [
     path('vacancies/', views.VacanciesList.as_view(), name='vacancies'),
     path('vacancies/cat/<str:code>', views.VacanciesBySpecialties.as_view(), name='vacancies_by_specialties'),
     path('vacancies/<int:id>', views.VacancyDetail.as_view(), name='vacancy_detail'),
+
     path('companies/', views.CompaniesList.as_view(), name='companies'),
     path('companies/<int:id>', views.CompanyDetail.as_view(), name='company_detail'),
 
@@ -36,4 +37,3 @@ urlpatterns = [
     path('logout/', LogoutView.as_view(), {'next_page': settings.LOGOUT_REDIRECT_URL}, name='logout'),
     path('register/', views.MySignupView.as_view(),  name='register'),
 ]
-

@@ -1,6 +1,3 @@
-from django.core.management import BaseCommand
-
-from IT_hunter.models import Company, Vacancy, Specialty
 
 
 """ Вакансии """
@@ -39,68 +36,13 @@ companies = [
 
 specialties = [
 
-    {"code": "frontend", "title": "Фронтенд"},
-    {"code": "backend", "title": "Бэкенд"},
-    {"code": "gamedev", "title": "Геймдев"},
-    {"code": "devops", "title": "Девопс"},
-    {"code": "design", "title": "Дизайн"},
-    {"code": "products", "title": "Продукты"},
-    {"code": "management", "title": "Менеджмент"},
-    {"code": "testing", "title": "Тестирование"}
+    {"code": "frontend", "title": "Фронтенд", "logo": "specty_frontend.png"},
+    {"code": "backend", "title": "Бэкенд", "logo": "specty_backend.png"},
+    {"code": "gamedev", "title": "Геймдев", "logo": "specty_gamedev.png"},
+    {"code": "devops", "title": "Девопс", "logo": "specty_devops.png"},
+    {"code": "design", "title": "Дизайн", "logo": "specty_design.png"},
+    {"code": "products", "title": "Продукты", "logo": "specty_products.png"},
+    {"code": "management", "title": "Менеджмент", "logo": "specty_management.png"},
+    {"code": "testing", "title": "Тестирование", "logo": "specty_testing.png"}
 
 ]
-
-
-class Command(BaseCommand):
-    help = 'Populating the database'
-
-    @staticmethod
-    def _populating_company(self, item_list=None):
-        if isinstance(item_list, list) and item_list:
-            count = 0
-            for item in item_list:
-                Company.objects.create(
-                    id=item['id'],
-                    name=item['title'],
-                    location=item['location'],
-                    logo=item['logo'],
-                    description=item['description'],
-                    employee_count=int(item['employee_count'])
-                )
-                count += 1
-            print(f'{count} объектов было добавлено')
-
-    @staticmethod
-    def _populating_specialty(self, item_list=None):
-        if isinstance(item_list, list) and item_list:
-            count = 0
-            for item in item_list:
-                Specialty.objects.create(
-                    code=item['code'],
-                    title=item['title'],
-                )
-                count += 1
-            print(f'{count} объектов было добавлено')
-
-    @staticmethod
-    def _populating_vacancy(self, item_list=None):
-        if isinstance(item_list, list) and item_list:
-            count = 0
-            for item in item_list:
-                Vacancy.objects.create(
-                    id=item['id'],
-                    title=item['title'],
-                    specialty=Specialty.objects.get(code=item['specialty']),
-                    company=Company.objects.get(pk=item['company']),
-                    skills=item['skills'],
-                    description=item['description'],
-                    salary_min=int(item['salary_from']),
-                    salary_max=int(item['salary_to'])
-                )
-                count += 1
-            print(f'{count} объектов было добавлено')
-
-    def handle(self, *args, **options):
-        self._populating_company(self, item_list=companies)
-        self._populating_specialty(self, item_list=specialties)
-        self._populating_vacancy(self, item_list=jobs)
