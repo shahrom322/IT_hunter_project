@@ -179,9 +179,8 @@ class CompanyForm(forms.ModelForm):
 
 
 class VacancyForm(forms.ModelForm):
-    """
-    Форма для создания своей вакансии.
-    """
+    """Форма для создания своей вакансии."""
+
     class Meta:
         model = Vacancy
         fields = ('title', 'specialty', 'skills', 'description', 'salary_min', 'salary_max')
@@ -232,9 +231,8 @@ class VacancyForm(forms.ModelForm):
 
 
 class ResumeForm(forms.ModelForm):
-    """
-    Форма для создания своего резюме.
-    """
+    """Форма для создания своего резюме."""
+
     class Meta:
         model = Resume
         fields = (
