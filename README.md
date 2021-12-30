@@ -19,4 +19,4 @@ Short description:<br>
 3. Then you should to install all dependencies<br>
     ***pip install -r requirements.txt***
 4. Now we need populate database. Execute next command<br>
-    ***python manage.py db_script***
+    ***python manage.py db_dump***
