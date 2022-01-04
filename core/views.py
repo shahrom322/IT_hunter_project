@@ -63,6 +63,7 @@ class VacancyDetail(TemplateView):
     """Вывод страницы с полным описанием вакасии и формой для заполнения отклика."""
 
     template_name = 'core/vacancy.html'
+    form_class = ApplicationForm
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -75,7 +76,7 @@ class VacancyDetail(TemplateView):
     def post(self, request, pk, *args, **kwargs):
         form = ApplicationForm(request.POST)
         if form.is_valid():
-            form.save(request, pk)
+            form.save(request.user, pk)
             return render(request, 'core/send.html', {})
         messages.warning(request, 'Ошибка валидации')
         return render(request, 'core/vacancy.html', self.get_context_data(pk=pk))
@@ -87,7 +88,7 @@ class CompanyDetail(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['company'] = get_object_or_404(Company, id=kwargs['id'])
+        context['company'] = get_object_or_404(Company, id=kwargs['pk'])
         context['vacancies'] = context['company'].vacancies.select_related('specialty', 'company')
         context['vacancies_count'] = len(context['vacancies'])
         return context
@@ -158,7 +159,12 @@ class MyVacancyView(LoginRequiredMixin, TemplateView):
     """Вывод страницы вакансии, созданной пользователем, с возможностью редактировать ее."""
 
     def get(self, request, pk, *args, **kwargs):
-        vacancy = get_object_or_404(Vacancy, pk=pk)
+        try:
+            vacancy = Vacancy.objects.prefetch_related(
+                    'applications').filter(company=request.user.company, pk=pk)
+        except Company.DoesNotExist:
+            messages.warning(request, 'Для начала создайте свою компанию')
+            return redirect('create_company')
         applications = vacancy.applications.all()
         form = VacancyForm(instance=vacancy)
         return render(self.request, 'core/vacancy-edit.html', context={
@@ -171,14 +177,14 @@ class MyVacancyView(LoginRequiredMixin, TemplateView):
     def post(self, request, pk, *args, **kwargs):
         form = VacancyForm(request.POST)
         if form.is_valid():
-            form.save(request, pk)
+            form.save(request.user, pk)
             messages.success(request, 'Вакансия была сохранена')
             return redirect('my_vacancies')
         messages.warning(request, 'Ошибка валидации')
         return render(request, 'core/vacancy-edit.html', {'form': form})
 
 
-class CreateVacancyView(TemplateView):
+class CreateVacancyView(LoginRequiredMixin, TemplateView):
     """Вывод страницы с формой для создания вакансии."""
 
     def get(self, *args, **kwargs):
@@ -210,7 +216,6 @@ class MyLoginView(LoginView):
             if user is not None:
                 login(self.request, user)
                 return HttpResponseRedirect('/')
-            # TODO думаю, что это не безопасно
             if not User.objects.filter(username=username):
                 form.add_error('username', 'Такого пользователя не существует')
             else:
@@ -237,7 +242,7 @@ class MySignupView(TemplateView):
         return render(request, 'core/register.html', {'form': form})
 
 
-class MyResumeView(TemplateView):
+class MyResumeView(LoginRequiredMixin, TemplateView):
     """Если у пользователя есть свое резюме, выводится страница с информацией о резюме и возможностью редактировать ее.
     Иначе выводится страница с предложением создать свое резюме."""
 
@@ -258,7 +263,7 @@ class MyResumeView(TemplateView):
         return render(request, 'core/resume-edit.html', {'form': form})
 
 
-class CreateResumeView(TemplateView):
+class CreateResumeView(LoginRequiredMixin, TemplateView):
     """Вывод страницы с формой для создания своего резюме."""
 
     template_name = 'core/resume-edit.html'
@@ -271,7 +276,7 @@ class CreateResumeView(TemplateView):
     def post(self, request, *args, **kwargs):
         form = ResumeForm(request.POST)
         if form.is_valid():
-            form.save(request)
+            form.save(request.user)
             messages.success(request, 'Резюме было сохранено')
             return redirect('my_resume')
         messages.warning(request, 'Ошибка валидации')
@@ -294,7 +299,7 @@ class SearchView(TemplateView):
         return context
 
 
-class ResumesList(TemplateView):
+class ResumesList(LoginRequiredMixin, TemplateView):
     """Вывод страницы со списком всех резюме."""
 
     template_name = 'core/resumes.html'
@@ -307,7 +312,7 @@ class ResumesList(TemplateView):
         return context
 
 
-class ResumeDetail(TemplateView):
+class ResumeDetail(LoginRequiredMixin, TemplateView):
     """Вывод страницы с полным описанием резюме."""
 
     template_name = 'core/resume.html'
@@ -315,8 +320,8 @@ class ResumeDetail(TemplateView):
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
         context['resume'] = get_object_or_404(
-            Resume.objects.exclude(status='Не ищу работу').select_related('specialty', 'user'),
-            id=kwargs['id']
+            Resume,
+            id=kwargs['pk']
         )
         return context
 

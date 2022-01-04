@@ -122,9 +122,9 @@ class ApplicationForm(forms.Form):
         })
     )
 
-    def save(self, request, pk):
+    def save(self, user, pk):
         Application.objects.create(
-            user=request.user,
+            user=user,
             vacancy=Vacancy.objects.get(pk=pk),
             written_username=self.cleaned_data['written_username'],
             written_phone=self.cleaned_data['written_phone'],
@@ -214,10 +214,10 @@ class VacancyForm(forms.ModelForm):
             }),
         }
 
-    def save(self, request, id):
-        company = Company.objects.get(owner=request.user)
+    def save(self, user, pk):
+        company = Company.objects.get(owner=user)
         obj, created = Vacancy.objects.update_or_create(
-            id=id,
+            pk=pk,
             defaults={
                 'title': self.cleaned_data['title'],
                 'specialty': self.cleaned_data['specialty'],
@@ -284,9 +284,9 @@ class ResumeForm(forms.ModelForm):
             })
         }
 
-    def save(self, request):
+    def save(self, user):
         obj, created = Resume.objects.update_or_create(
-            user=request.user,
+            user=user,
             defaults={
                 'name': self.cleaned_data['name'],
                 'surname': self.cleaned_data['surname'],

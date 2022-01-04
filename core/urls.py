@@ -2,7 +2,6 @@ from django.contrib.auth.views import LogoutView
 from django.urls import path
 
 from core import views
-from config import settings
 
 handler404 = views.custom_handler404
 handler500 = views.custom_handler500
@@ -34,6 +33,6 @@ urlpatterns = [
     path('myresume/create', views.CreateResumeView.as_view(), name='create_resume'),
 
     path('login/', views.MyLoginView.as_view(), name='login'),
-    path('logout/', LogoutView.as_view(), {'next_page': settings.LOGOUT_REDIRECT_URL}, name='logout'),
+    path('logout/', LogoutView.as_view(), name='logout'),
     path('register/', views.MySignupView.as_view(),  name='register'),
 ]
