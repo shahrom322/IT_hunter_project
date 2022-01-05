@@ -20,3 +20,7 @@ Short description:<br>
     ***pip install -r requirements.txt***
 4. Now we need populate database. Execute next command<br>
     ***python manage.py db_dump***
+<hr>
+### Or you can just:
+   ***docker-compose up***
+   Server will be start in  http://localhost:1337/
