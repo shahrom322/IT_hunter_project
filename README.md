@@ -21,6 +21,6 @@ Short description:<br>
 4. Now we need populate database. Execute next command<br>
     ***python manage.py db_dump***
 <hr>
-### Or you can just:
-   ***docker-compose up***
+### Or you can just:<br>
+   ***docker-compose up***<br>
    Server will be start in  http://localhost:1337/
