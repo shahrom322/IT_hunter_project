@@ -28,13 +28,13 @@
                                         <a href="{% url 'vacancy_detail' vacancy.id %}" class="mb-1">{{ vacancy.title }}</a>
                                         <p class="mb-1">
                                             <span class="mr-4">{{ vacancy.salary_min|convert_digit}} - {{ vacancy.salary_max|convert_digit}}</span>
-                                            {% if vacancy.applications.all.count > 0 %}
-                                            <a href="#" class="text-info">
-                                                {{vacancy.applications.all.count}} отклика
-                                            </a>
-                                            {% else %}
-                                            <span class="text-muted">Нет откликов</span>
-                                            {% endif %}
+                                            {% with total=vacancy.applications.all.count %}
+                                                {% if total > 0 %}
+                                                    {{total}} отклика
+                                                {% else %}
+                                                <span class="text-muted">Нет откликов</span>
+                                                {% endif %}
+                                            {% endwith %}
                                         </p>
                                     </div>
                                     <div class="col-6 col-lg-4 text-right">

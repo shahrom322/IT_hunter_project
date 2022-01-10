@@ -3,7 +3,6 @@ from crispy_forms.layout import Submit
 from django import forms
 from django.contrib.auth import authenticate
 from django.contrib.auth import get_user_model
-from django.core.exceptions import ObjectDoesNotExist
 from django.core.validators import RegexValidator
 
 from core.models import Application, Vacancy, Company, Resume
@@ -87,49 +86,16 @@ class LoginForm(forms.Form):
     password = forms.CharField(label='Пароль', widget=forms.PasswordInput())
 
 
-class ApplicationForm(forms.Form):
-    """Форма для создания отклика на вакансию."""
+class ApplicationForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        self.helper = FormHelper()
-        self.helper.form_method = "post"
+        super(ApplicationForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
         self.helper.add_input(Submit('submit', 'Отправить'))
 
-    written_username = forms.CharField(
-        label='Имя',
-        max_length=20,
-        widget=forms.TextInput(attrs={
-            'class': "form-control",
-            'id': "userName",
-        })
-    )
-    written_phone = forms.IntegerField(
-        label='Телефон',
-        widget=forms.NumberInput(attrs={
-            'class': "form-control",
-            'id': "userPhone",
-            'placeholder': "79999999999"
-        })
-    )
-    written_cover_letter = forms.CharField(
-        label='Сопроводительное письмо',
-        widget=forms.Textarea(attrs={
-            'class': "form-control",
-            'id': "userMsg",
-            'rows': "8"
-        })
-    )
-
-    def save(self, user, pk):
-        Application.objects.create(
-            user=user,
-            vacancy=Vacancy.objects.get(pk=pk),
-            written_username=self.cleaned_data['written_username'],
-            written_phone=self.cleaned_data['written_phone'],
-            written_cover_letter=self.cleaned_data['written_cover_letter']
-        )
+    class Meta:
+        model = Application
+        fields = ('written_username', 'written_phone', 'written_cover_letter')
 
 
 class CompanyForm(forms.ModelForm):
@@ -137,7 +103,7 @@ class CompanyForm(forms.ModelForm):
 
     class Meta:
         model = Company
-        fields = ('name', 'location', 'description', 'employee_count')
+        fields = ('name', 'location', 'description', 'employee_count', 'logo')
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': "form-control",
@@ -155,27 +121,12 @@ class CompanyForm(forms.ModelForm):
             'employee_count': forms.NumberInput(attrs={
                 'class': "form-control",
                 'id': "companyTeam",
+            }),
+            'logo': forms.FileInput(attrs={
+                'class': "custom-file-input",
+                'id': 'inputGroupFile01'
             })
         }
-
-    def save(self, request):
-        if len(request.FILES) != 0:
-            logo = "/company_images/" + str(request.FILES['logo'])
-        else:
-            try:
-                logo = Company.objects.get(owner=request.user).logo
-            except ObjectDoesNotExist:
-                logo = None
-        obj, created = Company.objects.update_or_create(
-            owner=request.user,
-            defaults={
-                'name': self.cleaned_data['name'],
-                'location': self.cleaned_data['location'],
-                'description': self.cleaned_data['description'],
-                'employee_count': self.cleaned_data['employee_count'],
-                'logo': logo
-            }
-        )
 
 
 class VacancyForm(forms.ModelForm):
@@ -183,7 +134,10 @@ class VacancyForm(forms.ModelForm):
 
     class Meta:
         model = Vacancy
-        fields = ('title', 'specialty', 'skills', 'description', 'salary_min', 'salary_max')
+        fields = (
+            'title', 'specialty', 'skills',
+            'description', 'salary_min', 'salary_max'
+        )
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': "form-control",
@@ -213,21 +167,6 @@ class VacancyForm(forms.ModelForm):
                 'id': "vacancySalaryMax",
             }),
         }
-
-    def save(self, user, pk):
-        company = Company.objects.get(owner=user)
-        obj, created = Vacancy.objects.update_or_create(
-            pk=pk,
-            defaults={
-                'title': self.cleaned_data['title'],
-                'specialty': self.cleaned_data['specialty'],
-                'company': company,
-                'skills': self.cleaned_data['skills'],
-                'description': self.cleaned_data['description'],
-                'salary_max': self.cleaned_data['salary_max'],
-                'salary_min': self.cleaned_data['salary_min']
-            }
-        )
 
 
 class ResumeForm(forms.ModelForm):
@@ -284,18 +223,3 @@ class ResumeForm(forms.ModelForm):
             })
         }
 
-    def save(self, user):
-        obj, created = Resume.objects.update_or_create(
-            user=user,
-            defaults={
-                'name': self.cleaned_data['name'],
-                'surname': self.cleaned_data['surname'],
-                'status': self.cleaned_data['status'],
-                'salary': self.cleaned_data['salary'],
-                'specialty': self.cleaned_data['specialty'],
-                'grade': self.cleaned_data['grade'],
-                'education': self.cleaned_data['education'],
-                'experience': self.cleaned_data['experience'],
-                'portfolio': self.cleaned_data['portfolio'],
-            }
-        )

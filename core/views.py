@@ -6,10 +6,10 @@ from django.contrib.auth.views import LoginView
 from django.db.models import Count, Q
 from django.http import HttpResponseBadRequest, HttpResponseServerError, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render, redirect
-from django.views.generic import TemplateView
+from django.views.generic import TemplateView, ListView, DetailView, CreateView, UpdateView
 
 from core.forms import SignupForm, LoginForm, ApplicationForm, CompanyForm, VacancyForm, ResumeForm
-from core.models import Specialty, Company, Vacancy, Resume
+from core.models import Specialty, Company, Vacancy, Resume, Application
 
 User = get_user_model()
 
@@ -33,171 +33,166 @@ class MainView(TemplateView):
         }
 
 
-class VacanciesList(TemplateView):
+class VacanciesList(ListView):
     """Вывод страницы со списком всех вакансий."""
 
+    model = Vacancy
     template_name = 'core/vacancies.html'
-
-    def get_context_data(self, *, object_list=None, **kwargs):
-        context = super().get_context_data(**kwargs)
-        vacancies = Vacancy.objects.select_related('specialty', 'company')
-        context['vacancies'] = vacancies
-        context['vacancies_count'] = len(vacancies)
-        return context
+    queryset = Vacancy.objects.select_related('specialty', 'company')
+    context_object_name = 'vacancies'
 
 
-class VacanciesBySpecialties(TemplateView):
+class VacanciesBySpecialties(ListView):
     """Вывод страницы со списком вакансий по категориям."""
 
+    model = Vacancy
     template_name = 'core/vacancies.html'
+    context_object_name = 'vacancies'
 
-    def get_context_data(self, *, object_list=None, **kwargs):
-        context = super().get_context_data(**kwargs)
-        vacancies = Vacancy.objects.filter(specialty__code=kwargs['code']).select_related('specialty', 'company')
-        context['vacancies'] = vacancies
-        context['vacancies_count'] = len(vacancies)
-        return context
+    def get_queryset(self):
+        return Vacancy.objects.filter(
+            specialty__code=self.kwargs['code']).select_related('specialty', 'company')
 
 
-class VacancyDetail(TemplateView):
-    """Вывод страницы с полным описанием вакасии и формой для заполнения отклика."""
+class VacancyDetail(LoginRequiredMixin, DetailView, CreateView):
+    """Вывод страницы с полным описанием вакансии и формой для заполнения отклика."""
 
     template_name = 'core/vacancy.html'
+    queryset = Vacancy.objects.select_related('company', 'specialty')
+    context_object_name = 'vacancy'
+    model = Application
     form_class = ApplicationForm
+    success_url = '/vacancies'
 
-    def get_context_data(self, *, object_list=None, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['vacancy'] = get_object_or_404(
-            Vacancy.objects.select_related('company', 'specialty'),
-            pk=kwargs['pk'])
-        context['form'] = ApplicationForm()
-        return context
-
-    def post(self, request, pk, *args, **kwargs):
-        form = ApplicationForm(request.POST)
-        if form.is_valid():
-            form.save(request.user, pk)
-            return render(request, 'core/send.html', {})
-        messages.warning(request, 'Ошибка валидации')
-        return render(request, 'core/vacancy.html', self.get_context_data(pk=pk))
+    def form_valid(self, form):
+        form.instance.vacancy = self.get_object()
+        form.instance.user = self.request.user
+        return super(VacancyDetail, self).form_valid(form)
 
 
-class CompanyDetail(LoginRequiredMixin, TemplateView):
+class CompanyDetail(LoginRequiredMixin, DetailView):
     """Вывод страницы описания компании."""
+
     template_name = 'core/company.html'
+    model = Company
+    context_object_name = 'company'
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['company'] = get_object_or_404(Company, id=kwargs['pk'])
-        context['vacancies'] = context['company'].vacancies.select_related('specialty', 'company')
-        context['vacancies_count'] = len(context['vacancies'])
+        context['vacancies'] = self.object.vacancies.select_related(
+            'specialty', 'company'
+        )
         return context
 
 
-class MyCompanyView(LoginRequiredMixin, TemplateView):
-    """Если у пользователя создана компания, выводится форма с описанием компании с возможностью редактировать её.
-    Если же таковой нет, выводится предложение создать свою компанию."""
+class CreateCompanyRequiredMixin:
+    """Пользовательский класс-миксин. Перенаправляет пользователя без компании
+    на страницу с предложением создать компанию."""
 
-    def get(self, request,  *args, **kwargs):
+    def dispatch(self, request, *args, **kwargs):
         try:
-            form = CompanyForm(instance=request.user.company)
-            return render(
-                request,
-                'core/company-edit.html',
-                {
-                    'form': form,
-                    'logo': request.user.company.logo,
-                }
-            )
+            company = request.user.company
+            return super().dispatch(request, *args, **kwargs)
         except Company.DoesNotExist:
-            return render(request, 'core/company-create.html')
-
-    def post(self, request, *args, **kwargs):
-        form = CompanyForm(request.POST)
-        if form.is_valid():
-            form.save(request)
-            messages.success(request, 'Данные сохранены')
-            return redirect('my_company')
-        messages.warning(request, 'Ошибка валидации')
-        return render(request, 'core/company-edit.html', {'form': form})
+            return redirect('lets_start')
 
 
-class CreateCompanyView(LoginRequiredMixin, TemplateView):
-    """Вывод страницы с формой для создания своей компании."""
+class MyCompanyStartView(LoginRequiredMixin, TemplateView):
+    """Вывод страницы с предложением создать компанию. В том случае, если пользователь
+    попал на эту страницу и у него есть своя компания, перенаправляем его на страницу
+    с редактированием данных о компании."""
 
-    template_name = 'core/company-edit.html'
-
-    def get_context_data(self, *, object_list=None, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['form'] = CompanyForm()
-        return context
-
-    def post(self, request, *args, **kwargs):
-        form = CompanyForm(request.POST)
-        if form.is_valid():
-            form.save(request)
-            messages.success(request, 'Данные сохранены')
-            return redirect('my_company')
-        messages.warning(request, 'Ошибка валидации')
-        return render(request, 'core/company-edit.html', {'form': form})
-
-
-class MyVacanciesView(LoginRequiredMixin, TemplateView):
-    """Вывод страницы со списком вакансий, созданные пользователем."""
+    template_name = 'core/company-create.html'
 
     def get(self, request, *args, **kwargs):
         try:
-            vacancies = Vacancy.objects.prefetch_related(
-                'applications').filter(company=request.user.company)
+            company = request.user.company
+            return redirect('my_company')
         except Company.DoesNotExist:
-            messages.warning(request, 'Для начала создайте свою компанию')
-            return redirect('create_company')
-        return render(request, 'core/vacancy-list.html', {'vacancies': vacancies})
+            return render(request, self.template_name)
 
 
-class MyVacancyView(LoginRequiredMixin, TemplateView):
-    """Вывод страницы вакансии, созданной пользователем, с возможностью редактировать ее."""
+class MyCompanyCreateView(LoginRequiredMixin, CreateView):
+    """Вывод страницы для создания компании пользователя."""
 
-    def get(self, request, pk, *args, **kwargs):
-        try:
-            vacancy = Vacancy.objects.prefetch_related(
-                    'applications').filter(company=request.user.company, pk=pk)
-        except Company.DoesNotExist:
-            messages.warning(request, 'Для начала создайте свою компанию')
-            return redirect('create_company')
-        applications = vacancy.applications.all()
-        form = VacancyForm(instance=vacancy)
-        return render(self.request, 'core/vacancy-edit.html', context={
-            'form': form,
-            'vacancy': vacancy,
-            'applications_count': len(applications),
-            'applications': applications,
-        })
+    model = Company
+    form_class = CompanyForm
+    template_name = 'core/company-edit.html'
+    success_url = '/'
 
-    def post(self, request, pk, *args, **kwargs):
-        form = VacancyForm(request.POST)
-        if form.is_valid():
-            form.save(request.user, pk)
-            messages.success(request, 'Вакансия была сохранена')
-            return redirect('my_vacancies')
-        messages.warning(request, 'Ошибка валидации')
-        return render(request, 'core/vacancy-edit.html', {'form': form})
+    def form_valid(self, form):
+        form.instance.owner = self.request.user
+        return super(MyCompanyCreateView, self).form_valid(form)
 
 
-class CreateVacancyView(LoginRequiredMixin, TemplateView):
+class MyCompanyView(LoginRequiredMixin, CreateCompanyRequiredMixin, UpdateView):
+    """Вывод страницы с данными о компании пользователя и возможностью редактировать ее."""
+
+    template_name = 'core/company-edit.html'
+    model = Company
+    form_class = CompanyForm
+
+    def get_object(self, queryset=None):
+        return self.request.user.company
+
+    def get_success_url(self):
+        return self.request.path
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['logo'] = self.object.logo
+        return context
+
+
+class MyVacanciesView(LoginRequiredMixin, CreateCompanyRequiredMixin, ListView):
+    """Вывод страницы со списком вакансий, созданные пользователем."""
+
+    template_name = 'core/vacancy-list.html'
+    model = Vacancy
+    context_object_name = 'vacancies'
+
+    def get_queryset(self):
+        return Vacancy.objects.prefetch_related(
+                'applications').filter(company=self.request.user.company)
+
+
+class MyVacancyView(LoginRequiredMixin, CreateCompanyRequiredMixin, UpdateView):
+
+    model = Vacancy
+    template_name = 'core/vacancy-edit.html'
+    form_class = VacancyForm
+    context_object_name = 'vacancy'
+
+    def get_object(self, queryset=None):
+        return get_object_or_404(
+                    Vacancy.objects.prefetch_related('applications'),
+                    company=self.request.user.company, pk=self.kwargs['pk']
+                )
+
+    def get_success_url(self):
+        return self.request.path
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['applications'] = self.object.applications.all()
+        return context
+
+    def form_valid(self, form):
+        form.instance.owner = self.request.user
+        return super(MyVacancyView, self).form_valid(form)
+
+
+class CreateVacancyView(LoginRequiredMixin, CreateCompanyRequiredMixin, CreateView):
     """Вывод страницы с формой для создания вакансии."""
 
-    def get(self, *args, **kwargs):
-        form = VacancyForm()
-        return render(self.request, 'core/vacancy-create.html', {'form': form})
+    model = Vacancy
+    form_class = VacancyForm
+    template_name = 'core/vacancy-create.html'
+    success_url = '/'
 
-    def post(self, *args, **kwargs):
-        form = VacancyForm(self.request.POST)
-        if form.is_valid():
-            messages.success(self.request, 'Вакансия была сохранена')
-            return redirect('my_vacancies')
-        messages.warning(self.request, 'Ошибка валидации')
-        return render(self.request, 'core/vacancy-create.html', {'form': form})
+    def form_valid(self, form):
+        form.instance.company = self.request.user.company
+        return super(CreateVacancyView, self).form_valid(form)
 
 
 class MyLoginView(LoginView):
@@ -242,45 +237,61 @@ class MySignupView(TemplateView):
         return render(request, 'core/register.html', {'form': form})
 
 
-class MyResumeView(LoginRequiredMixin, TemplateView):
-    """Если у пользователя есть свое резюме, выводится страница с информацией о резюме и возможностью редактировать ее.
-    Иначе выводится страница с предложением создать свое резюме."""
+class CreateResumeRequiredMixin:
+    """Пользовательский класс-миксин. Перенаправляет пользователя без резюме
+    на страницу с предложением создать резюме."""
+
+    def dispatch(self, request, *args, **kwargs):
+        try:
+            resume = request.user.resume
+            return super().dispatch(request, *args, **kwargs)
+        except Resume.DoesNotExist:
+            return redirect('lets_start_resume')
+
+
+class MyResumeStartView(LoginRequiredMixin, TemplateView):
+    """Вывод страницы с предложением создать резюме. В том случае, если пользователь
+    попал на эту страницу и у него есть свое резюме, перенаправляем его на страницу
+    с редактированием данных о резюме."""
+
+    template_name = 'core/resume-create.html'
 
     def get(self, request, *args, **kwargs):
         try:
-            form = ResumeForm(instance=request.user.resume)
-            return render(request, 'core/resume-edit.html', {'form': form})
+            resume = request.user.resume
+            return redirect('my_resume')
         except Resume.DoesNotExist:
-            return render(request, 'core/resume-create.html')
-
-    def post(self, request, *args, **kwargs):
-        form = ResumeForm(request.POST)
-        if form.is_valid():
-            form.save(request)
-            messages.success(request, 'Резюме было сохранено')
-            return redirect('my_resume')
-        messages.warning(request, 'Ошибка валидации')
-        return render(request, 'core/resume-edit.html', {'form': form})
+            return render(request, self.template_name)
 
 
-class CreateResumeView(LoginRequiredMixin, TemplateView):
-    """Вывод страницы с формой для создания своего резюме."""
+class MyResumeView(LoginRequiredMixin, CreateResumeRequiredMixin, UpdateView):
+    """Вывод страницы с данными о резюме пользователя и возможностью редактировать ее."""
 
+    model = Resume
     template_name = 'core/resume-edit.html'
+    form_class = ResumeForm
+    context_object_name = 'resume'
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['form'] = ResumeForm()
-        return context
+    def get_object(self, queryset=None):
+        return Resume.objects.select_related('user', 'specialty').get(
+                    user=self.request.user
+                )
 
-    def post(self, request, *args, **kwargs):
-        form = ResumeForm(request.POST)
-        if form.is_valid():
-            form.save(request.user)
-            messages.success(request, 'Резюме было сохранено')
-            return redirect('my_resume')
-        messages.warning(request, 'Ошибка валидации')
-        return render(request, 'core/resume-edit.html', {'form': form})
+    def get_success_url(self):
+        return self.request.path
+
+
+class CreateResumeView(LoginRequiredMixin, CreateView):
+    """Вывод страницы для создания резюме пользователя."""
+
+    model = Resume
+    form_class = ResumeForm
+    template_name = 'core/resume-edit.html'
+    success_url = '/'
+
+    def form_valid(self, form):
+        form.instance.user = self.request.user
+        return super(CreateResumeView, self).form_valid(form)
 
 
 class SearchView(TemplateView):
@@ -291,52 +302,38 @@ class SearchView(TemplateView):
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
         search_query = self.request.GET.get('q')
-        vacancies = Vacancy.objects.select_related(
-            'specialty', 'company').filter(Q(skills__icontains=search_query) | Q(title__icontains=search_query))
-        context['vacancies_count'] = len(vacancies)
-        context['vacancies'] = vacancies
-        context['examples'] = Vacancy.objects.first().skills.split(', ')[:4]
-        return context
+        if search_query:
+            vacancies = Vacancy.objects.select_related(
+                'specialty', 'company').filter(Q(skills__icontains=search_query) | Q(title__icontains=search_query))
+            context['vacancies_count'] = len(vacancies)
+            context['vacancies'] = vacancies
+            context['examples'] = Vacancy.objects.first().skills.split(', ')[:4]
+            return context
 
 
-class ResumesList(LoginRequiredMixin, TemplateView):
+class ResumesList(LoginRequiredMixin, ListView):
     """Вывод страницы со списком всех резюме."""
 
+    model = Resume
+    queryset = Resume.objects.exclude(status='Не ищу работу').select_related('user')
+    context_object_name = 'resumes'
     template_name = 'core/resumes.html'
 
-    def get_context_data(self, *, object_list=None, **kwargs):
-        context = super().get_context_data(**kwargs)
-        resumes = Resume.objects.exclude(status='Не ищу работу').select_related('user')
-        context['resumes'] = resumes
-        context['resumes_count'] = len(resumes)
-        return context
 
-
-class ResumeDetail(LoginRequiredMixin, TemplateView):
+class ResumeDetail(LoginRequiredMixin, DetailView):
     """Вывод страницы с полным описанием резюме."""
 
+    model = Resume
     template_name = 'core/resume.html'
-
-    def get_context_data(self, *, object_list=None, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['resume'] = get_object_or_404(
-            Resume,
-            id=kwargs['pk']
-        )
-        return context
+    context_object_name = 'resume'
 
 
-class CompaniesList(TemplateView):
+class CompaniesList(LoginRequiredMixin, ListView):
     """Вывод страницы со списком всех компаний."""
 
+    model = Company
     template_name = 'core/companies.html'
-
-    def get_context_data(self, *, object_list=None, **kwargs):
-        context = super().get_context_data(**kwargs)
-        companies = Company.objects.all().annotate(vacancy_count=Count('vacancies'))
-        context['companies'] = companies
-        context['companies_count'] = len(companies)
-        return context
+    context_object_name = 'companies'
 
 
 def custom_handler404(request, exception):

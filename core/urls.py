@@ -21,15 +21,15 @@ urlpatterns = [
     path('resumes/<int:pk>', views.ResumeDetail.as_view(), name='resume_detail'),
 
     path('mycompany/', views.MyCompanyView.as_view(), name='my_company'),
-    path('mycompany/letsstart', views.MyCompanyView.as_view(), name='lets_start'),
-    path('mycompany/create', views.CreateCompanyView.as_view(), name='create_company'),
+    path('mycompany/letsstart', views.MyCompanyStartView.as_view(), name='lets_start'),
+    path('mycompany/create', views.MyCompanyCreateView.as_view(), name='create_company'),
 
     path('mycompany/vacancies', views.MyVacanciesView.as_view(), name='my_vacancies'),
     path('mycompany/vacancies/<int:pk>', views.MyVacancyView.as_view(), name='my_vacancy'),
     path('mycompany/vacancies/create', views.CreateVacancyView.as_view(), name='create_vacancy'),
 
     path('myresume/', views.MyResumeView.as_view(), name='my_resume'),
-    path('myresume/letsstart', views.MyResumeView.as_view(), name='lets_start_resume'),
+    path('myresume/letsstart', views.MyResumeStartView.as_view(), name='lets_start_resume'),
     path('myresume/create', views.CreateResumeView.as_view(), name='create_resume'),
 
     path('login/', views.MyLoginView.as_view(), name='login'),
