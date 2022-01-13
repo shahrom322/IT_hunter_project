@@ -64,15 +64,3 @@ class ViewsTest(TestCase):
         self.assertTemplateUsed(authenticated_response, 'core/vacancy.html')
         self.assertIsInstance(authenticated_response.context['vacancy'], Vacancy)
         self.assertIsInstance(authenticated_response.context['form'], ApplicationForm)
-
-        response = self.client.post(
-            reverse(
-                'vacancy_detail', kwargs={
-                    'pk': 1
-                    # 'written_username': 'test_username',
-                    # 'written_phone': '+79999999999',
-                    # 'written_cover_letter': 'test_letter'
-                }
-            )
-        )
-        print(response.status_code)
