@@ -1,24 +1,21 @@
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit
 from django import forms
-from django.contrib.auth import authenticate
 from django.contrib.auth import get_user_model
+from django.contrib.auth.forms import UserCreationForm
 from django.core.validators import RegexValidator
 
 from core.models import Application, Vacancy, Company, Resume
 
-
 User = get_user_model()
 
 
-class SignupForm(forms.Form):
+class SignupForm(UserCreationForm):
     """Форма для регистрации на сайте."""
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
+        super(SignupForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper()
-        self.helper.form_method = 'post'
         self.helper.add_input(Submit('submit', 'Зарегистрироваться'))
 
     username_regex = RegexValidator(r'^[a-z0-9_-]{6,16}')
@@ -29,64 +26,14 @@ class SignupForm(forms.Form):
         required=True,
         help_text='Логин должен насчитывать от 6 до 16 символов и может состоять из латинских букв и цифр.'
     )
-    first_name = forms.CharField(label='Имя', max_length=20)
-    last_name = forms.CharField(label='Фамилия', max_length=20)
-    email = forms.CharField(
-        label='Почтовый адресс',
-        widget=forms.EmailInput(),
-        help_text='Минимум 6 символов'
-    )
-    password = forms.CharField(label='Пароль', widget=forms.PasswordInput())
-    repeat_password = forms.CharField(
-        label='Повторите пароль',
-        widget=forms.PasswordInput()
-    )
 
-    def clean(self):
-        password = self.cleaned_data['password']
-        confirm_password = self.cleaned_data['repeat_password']
-
-        if password != confirm_password:
-            raise forms.ValidationError('Пароли не совпадают')
-
-        username = self.cleaned_data.get('username', None)
-
-        if not username:
-            raise forms.ValidationError('Поле логина не верно')
-
-        if User.objects.filter(username=username).exists():
-            raise forms.ValidationError(
-                'Пользователь с таким логином уже существует'
-            )
-
-    def save(self):
-        user = User.objects.create_user(
-            username=self.cleaned_data['username'],
-            first_name=self.cleaned_data['first_name'],
-            last_name=self.cleaned_data['last_name'],
-            email=self.cleaned_data['email'],
-            password=self.cleaned_data['password']
-        )
-        user.save()
-        auth = authenticate(**self.cleaned_data)
-        return auth
-
-
-class LoginForm(forms.Form):
-    """Форма для авторизации на сайте."""
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        self.helper = FormHelper()
-        self.helper.form_method = 'post'
-        self.helper.add_input(Submit('submit', 'Войти'))
-
-    username = forms.CharField(label='Логин', max_length=20)
-    password = forms.CharField(label='Пароль', widget=forms.PasswordInput())
+    class Meta:
+        model = User
+        fields = ['username', 'email', 'first_name', 'last_name']
 
 
 class ApplicationForm(forms.ModelForm):
+    """Форма для создания отклика на вакансию."""
 
     def __init__(self, *args, **kwargs):
         super(ApplicationForm, self).__init__(*args, **kwargs)
@@ -175,8 +122,8 @@ class ResumeForm(forms.ModelForm):
     class Meta:
         model = Resume
         fields = (
-            'name', 'surname', 'status',
-            'salary', 'specialty', 'grade',
+            'name', 'surname', 'status', 'salary',
+            'specialty', 'grade', 'photo',
             'education', 'experience', 'portfolio'
         )
         widgets = {
@@ -222,4 +169,3 @@ class ResumeForm(forms.ModelForm):
                 'id': "userPortfolio"
             })
         }
-
