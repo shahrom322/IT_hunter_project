@@ -1,5 +1,6 @@
 # JUMANDJI
-This is my second Django project. Site for job search.
+Site for job search, with the possibility of registration, compiling your resume and vacancies. Additional libraries: django-crispy-forms for displaying almost all the main forms on the site, django-debug-toolbar for debugging the development stage (controlling requests to the database), flake8 for controlling the code style. Also detailed the documentation. The site was deployed on heroku.
+https://github.com/shahrom322/IT_hunter_project
 
 Short description:<br>
 :white_check_mark:Possibility of user registration.<br>
